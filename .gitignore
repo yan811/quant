@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 .ipynb_checkpoinst
 raw_data/
-
+.idea/
 # C extensions
 *.so
 
