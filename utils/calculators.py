@@ -7,6 +7,8 @@
 # Calculators
 import math
 import scipy.stats as st
+import numpy as np
+
 
 
 def OnlyTrading(df,TradeDay):   # turn data with all natural date to data with trade day only
@@ -131,10 +133,62 @@ def ts_Stdev(df, num):             # get the min value of last num trading day
     df = AllDate(df,dfCleaned2,TradeDay)
     return df
 
-# more calculator , see df.rolling: http://www.cppcns.com/jiaoben/python/301821.html 
-def ts_Rank(df, num):
-    dfCleaned = OnlyTrading(df,TradeDay)
-    df = dfCleaned.rolling(num).rank()
-    return df
-#rank=gplearn.functions.make_function(function = _rank,name = 'rank',arity = 1)
+def _protected_division(x1, x2):
+    with np.errstate(divide= 'ignore', invalid= 'ignore'):
+        return np.where(np.abs(x2) > 1e-10 ,np.divide(x1, x2), 1.)
 
+def _protected_sqrt(x1):
+    return np.sqrt(np.abs(x1))
+
+def _protected_log(x1):
+    with np.errstate(divide= 'ignore', invalid= 'ignore'):
+        return np.where(np.abs(x1) > 1e-10, np.log(np.abs(x1)), 0.)
+
+def _protected_inverse(x1):
+    with np.errstate(divide= 'ignore', invalid= 'ignore'):
+        return np.where(np.abs(x1) > 1e-10, 1. / x1, 0.)
+
+        
+        
+def _sigmoid(x1):
+    with np.errstate(over= 'ignore', under= 'ignore'):
+        return  1 / ( 1 + np.exp(-x1))
+
+def gp_add(x,y):
+    
+     return x + y
+
+def gp_sub(x,y):
+    
+     return x - y
+
+def gp_mul(x,y):
+    
+     return x * y
+
+def gp_div(x,y):
+     return _protected_division(x, y)
+
+def gp_sqrt(data):
+    
+     return _protected_sqrt(data)
+
+def gp_log(data):
+    
+     return _protected_log(data)
+
+def gp_neg(data):
+    
+     return np.negative(data)
+
+def gp_inv(data):#倒数
+    
+     return _protected_inverse(data)
+
+def gp_abs(data):
+    
+     return np.abs(data)
+
+def gp_sig(data):
+    
+     return _sigmoid(data)
