@@ -1,56 +1,90 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
 
+# change browser to chrome to open jupyter notebook : https://www.jb51.net/article/186420.htm
 
-from jqdatasdk import *
+# import basic modules
 import pandas as pd
-auth('13120495811','Yjy19990811')
+import numpy as np
+
+import mat73  # Comment: use " pip install mat73" in Annaconda Powershell to install mat73 
+import os
+
+root = 'C:/Users/DELL/Desktop/recent/研一下/学习/量化/final_project/quant_code/'
+os.chdir(root)
+
+import utils.tools as tools # local module to deel with time format change
+import utils.calculators as calculators
+import factor_gen.factor101
 
 
-# In[2]:
+# In[6]:
 
 
+def get_day_rate():
+    file = os.path.join(root,'raw_data','Px_new.mat')
+    data1 = mat73.loadmat(file)
+    data1 = data1['Px']
 
-#print(len(codes))#4864
+    col = data1['LocalID']
+    ind = tools.ConTimeDay(data1) 
+    ind = tools.Str2times(ind)
+
+    Close = data1['AdjClose']
+    Close = pd.DataFrame(Close)
+    Close.columns  = col
+    Close.index = ind
+    
+    Rate = Close/Close.shift(1)-1#收盘价/昨日收盘价-1
+    
+    Rate = Rate[Rate.index>='2018-01-01']
+
+    del data1,Close
+    
+    #拼接
+    i = 1
+    for code in col:
+        if i ==1:
+            data = pd.DataFrame(Rate[code])
+            data = data.reset_index()
+            data.columns = ['time','rate']
+            data ['code'] = int(code)
+        else:
+            data_temp = pd.DataFrame(Rate[code])
+            data_temp = data_temp.reset_index()
+            data_temp.columns = ['time','rate']
+            data_temp ['code'] = int(code)
+            data = data.append(data_temp)
+            del data_temp
+        if i%500 == 0: print(i)
+        i+=1
+    return data
 
 
-# In[31]:
+# In[21]:
+
+
+#rate = get_dat_rate()
+def get_y(rate,percent):
+    def apply_range(x,percent = percent):
+        if x>percent:
+            x=1
+        if x<-percent:
+            x=-1
+        if x>=-percent and x<=percent:
+            x=0
+        return x
+    rate['y'] = rate['rate'].apply(lambda x:apply_range(x))
+    rate = rate.drop(columns = ['rate'])
+    return rate
+
+
+# In[8]:
+
 
 if __name__=='__main__':
-    path = 'C:/Users/DELL/Desktop/recent/研一下/学习/量化/final_project/quant_code/raw_data/y/'
-    codes = list(get_all_securities(['stock']).index)
-    price = get_price(security=codes,start_date='2017-12-31', end_date='2022-06-01',frequency = 'daily',fields = 'close',skip_paused=False, fq='pre')#!!!!!!!!!!!!!改code
-    print(price)
-'''
-def gen_close_price(codes,start_date = '2017-12-31',end_date = '2022-06-01',save = False):
-    price = get_price(security=codes,start_date=start_date, end_date=end_date,frequency = 'daily',fields = 'close',skip_paused=False, fq='pre')#!!!!!!!!!!!!!改code    
-    i = 1
-    #factor_data to df
-    for key in factor_data.keys():
-        #print(key,i)
-        if i ==1:
-            df = factor_data[key]
-            df.columns = [key]
-        else:
-            df[key] = factor_data[key].values   
-        i+=1
-        if
-    df.to_csv(path+'close_price_daily'+'.csv')
-    print('finish saving ')
-
-    
-
-
-codes = list(get_all_securities(['stock']).index)
-
-gen_data(codes)
-
-
-# In[ ]:
-'''
-
-
-
+    rate = get_day_rate()
+    y = get_y(rate,percent = 0.03)
+    print(y.groupby('y').count())
 
