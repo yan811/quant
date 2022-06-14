@@ -66,6 +66,22 @@ def ts_Decay(df, num):                 # decayed weight: linear change
     df = AllDate(df,dfCleaned2,TradeDay)
     return df
 
+def ts_Decay2(dfCleaned, num):                 # decayed weight: linear change
+    num = min(num,len(dfCleaned))
+    #dfCleaned = OnlyTrading(df,TradeDay)
+    sums = 0 
+    for v in range(num):
+        # print(v)
+        # print( (num - v ) / num)
+        if v == 0:
+            dfCleaned2 = dfCleaned.copy()
+        else:    
+            dfCleaned2 = dfCleaned2 + dfCleaned.shift(v) * (num - v ) / num
+        sums = sums + (num - v ) / num
+    dfCleaned2 = dfCleaned2 / sums
+    #df = AllDate(df,dfCleaned2,TradeDay)
+    return dfCleaned2
+
 def cf(j,n):
     p1 = n - j 
     p2 = n 
