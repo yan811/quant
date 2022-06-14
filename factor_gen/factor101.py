@@ -1,21 +1,26 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
-import os
+#import os
 import pandas as pd
 import numpy as np
-root= 'C:/Users/DELL/Desktop/recent/研一下/学习/量化/final_project/quant_code/'
-os.chdir(root)
+root= './'
+#os.chdir(root)
+import sys
+import os
+env_path = os.path.join(os.path.dirname(__file__), '..')#若在ipynb中，env_path = os.path.join(os.path.dirname(os.path.realpath('__file__')), '..')
+if env_path not in sys.path:
+    sys.path.append(env_path)
 import utils.tools as tools
 import utils.calculators as calculators
 import factor_gen.y as y
+import matplotlib.pyplot as plt
+from gplearn.genetic import SymbolicTransformer
+from gplearn.functions import make_function
+
 
 
 # In[2]:
-
 
 def transfer_data(sample):
     sample2 = sample.set_index(['PubDate'])
@@ -27,8 +32,6 @@ def transfer_data(sample):
 
 
 # In[3]:
-
-
 def get_raw_factor101():
     '''预测数据'''
     forecast_data = pd.read_csv(os.path.join(root,'raw_data','factor101','PerformanceForecast_DataYes.csv'))
@@ -90,154 +93,78 @@ def get_raw_factor101():
     combine_data2 = pd.merge(combine_data,forecast_data,how = 'outer',on = ['Ticker','PubDate']) #combine_data-pubdate_x，forecast_data-pubdate_y
     #按报告期正序排序
     #combine_data2 = combine_data2.sort_values(by =['EndDate'],ascending =True)
-    print('finish preparing 3 datas')
+    print('finish merging 3 datas')
     
     return combine_data2
 
+def make_functions():
+    gp_add = make_function(function=calculators.gp_add, name= 'gp_add', arity= 2)
+    gp_sub = make_function(function=calculators.gp_sub, name= 'gp_sub', arity= 2)
+    gp_mul = make_function(function=calculators.gp_mul, name= 'gp_mul', arity= 2)
+    gp_div = make_function(function=calculators.gp_div, name= 'gp_div', arity= 2)
+    gp_sqrt = make_function(function=calculators.gp_sqrt, name= 'gp_sqrt', arity= 1)
+    gp_log = make_function(function=calculators.gp_log, name= 'gp_log', arity= 1)
+    gp_neg = make_function(function=calculators.gp_neg, name= 'gp_neg', arity= 1)
+    gp_inv = make_function(function=calculators.gp_inv, name= 'gp_inv', arity= 1)
+    gp_abs = make_function(function=calculators.gp_abs, name= 'gp_abs', arity= 1)
+    gp_sig = make_function(function=calculators.gp_sig, name= 'gp_sig', arity= 1)
+    function_set = (gp_add,gp_sub,gp_mul,gp_div,gp_sqrt,gp_log,gp_neg,gp_inv,gp_abs,gp_sig)
+    return function_set
 
-# In[14]:
+if __name__=='__main__':
+    print('generate x...')
+    data = get_raw_factor101()
+    data[list(data.columns)[2:]] = data.groupby('Ticker').apply(lambda x:calculators.ts_Decay2(x[list(x.columns)[2:]],5)).reset_index(drop =True)
+    data['Ticker'] = data['Ticker'].astype(int)
+    print('generate y...')
+    y = y.get_day_rate()
+    y['rate'] = y['rate'].shift(-20)#后移20天（用X预测20天之后的Y）
 
+    total_data = pd.merge(data,y,how = 'inner',left_on = ['Ticker','PubDate'],right_on = ['code','time'])  
+    total_data = total_data.sort_values(by =['PubDate'],ascending =True)
+    X = total_data[['REVENUE','T_PROFIT','DILUTED_EPS','INCOME_TAX','N_PROFIT','REVENUE_GROWTH','T_PROFIT_GROWTH','ROE','ForcastType','FiscalPeriod','ForecastObject','EEarningRateFloor','EEarningRateCeiling','EEarningFloor','EEarningCeiling','EProfitRateFloor','EProfitRateCeiling','EProfitFloor','EProfitCeiling','EProfitParentRateFloor','EProfitParentRateCeiling','EProfitParentFloor','EProfitParentCeiling','EEPSFloor','EEPSCeiling']]
+    Y = total_data[['rate']]
 
-data = get_raw_factor101()
+    print('train/test split...')
+    split = int(len(total_data)*0.8)
+    X_train = X.iloc[:split,:]
+    X_test = X.iloc[split:,:]
+    Y_train = Y.iloc[:split,:]
+    Y_test = Y.iloc[split:,:]
 
-
-# In[15]:
-
-
-data
-
-
-# In[19]:
-
-
-data[list(data.columns)[2:]] = data.groupby('Ticker').apply(lambda x:calculators.ts_Decay2(x[list(x.columns)[2:]],5)).reset_index(drop =True)
-
-
-# In[23]:
-
-
-data['Ticker'] = data['Ticker'].astype(int)
-
-
-# In[21]:
-
-
-y = y.get_day_rate()
-
-
-# In[22]:
-
-
-y
-
-
-# In[24]:
-
-
-total_data = pd.merge(data,y,how = 'inner',left_on = ['Ticker','PubDate'],right_on = ['code','time'])
-
-
-# In[25]:
-
-
-total_data
-
-
-# In[31]:
-
-
-total_data = total_data.sort_values(by =['PubDate'],ascending =True)
-
-
-# In[32]:
-
-
-total_data
-
-
-# In[34]:
-
-
-X = total_data[['REVENUE',
- 'T_PROFIT',
- 'DILUTED_EPS',
- 'INCOME_TAX',
- 'N_PROFIT',
- 'REVENUE_GROWTH',
- 'T_PROFIT_GROWTH',
- 'ROE',
- 'ForcastType',
- 'FiscalPeriod',
- 'ForecastObject',
- 'EEarningRateFloor',
- 'EEarningRateCeiling',
- 'EEarningFloor',
- 'EEarningCeiling',
- 'EProfitRateFloor',
- 'EProfitRateCeiling',
- 'EProfitFloor',
- 'EProfitCeiling',
- 'EProfitParentRateFloor',
- 'EProfitParentRateCeiling',
- 'EProfitParentFloor',
- 'EProfitParentCeiling',
- 'EEPSFloor',
- 'EEPSCeiling']]
-Y = total_data[['rate']]
-
-
-# In[38]:
-
-
-split = int(len(total_data)*0.7)
-X_train = X.iloc[:,:split]
-X_test = X.iloc[:,split:]
-Y_train = Y.iloc[:,:split]
-Y_test = Y.iloc[:,split:]
-
-
-# In[ ]:
-
-
-from gplearn.genetic import SymbolicTransformer
-st = SymbolicTransformer(generations=50,  # 公式进化的世代数量  30
-                         #function_set=function_set,  # 用于构建和进化公式时使用的函数集
-                         parsimony_coefficient=0.001,  # 节俭系数，用于惩罚过于复杂的公式
+    print('find functions...')
+    function_set = make_functions()
+    st = SymbolicTransformer(generations=30,  # 公式进化的世代数量  50
+                         function_set=function_set,  # 用于构建和进化公式时使用的函数集
+                         parsimony_coefficient=0.00001,  # 节俭系数，用于惩罚过于复杂的公式
                          metric='spearman', # 适应度指标，可以用make_fitness自定义
                          p_crossover=0.9,  # 交叉变异概率                     
                          max_samples=0.9,  # 最大采样比例
                          verbose=1,
                          random_state=0,  # 随机数种子
-                         n_jobs=-1,  # 并行计算使用的核心数量
+                         n_jobs=-1  # 并行计算使用的核心数量
                         )
 
-X_train = X_train.fillna(0)
-Y_train = Y_train.fillna(0)
-st.fit(X_train, Y_train)
-df_statistics = pd.DataFrame(st.run_details_)
+    X_train = X_train.fillna(0)
+    Y_train = Y_train.fillna(0)
+    st.fit(X_train, Y_train)
+    df_statistics = pd.DataFrame(st.run_details_)
 
-# 画学习曲线
-duration = df_statistics['generation_time'].sum() / 60
-x = df_statistics['generation']
-plt.plot(x, df_statistics['average_fitness'], label='average')
-plt.plot(x, df_statistics['best_fitness'], label='best')
-plt.plot(x, df_statistics['best_oob_fitness'], label='best_oob')
-plt.title('Learning Curve of Fitness, 耗时:%.0fmin' % duration)
-plt.tight_layout()
-plt.legend(loc='best')
-plt.show()
-
-print(st)
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
+    
+    print(st)
+    with open('./test.txt','w') as f:
+        f.write(str(st))
+    print('finish saving functions')
+    
+    # 画学习曲线
+    duration = df_statistics['generation_time'].sum() / 60
+    x = df_statistics['generation']
+    plt.plot(x, df_statistics['average_fitness'], label='average')
+    plt.plot(x, df_statistics['best_fitness'], label='best')
+    plt.plot(x, df_statistics['best_oob_fitness'], label='best_oob')
+    plt.title('Learning Curve of Fitness, time:%.0fmin' % duration)
+    plt.tight_layout()
+    plt.legend(loc='best')
+    plt.savefig('./learning_curve.jpg')
+    #plt.show()
+    print('finish saving learning curves')
