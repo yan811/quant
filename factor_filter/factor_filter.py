@@ -112,3 +112,25 @@ def PerformanceWithCost(f1, TotalRet, delayNum, cost, fig, SDate, EDate):
     # print
     print('SR:', round(sr1, 3), 'AR:', round(ret1, 3), 'TO:', GetTurnover(f1_stand))
     return round(sr1, 3), round(ret1, 3), factorRetLine
+
+
+def CorrValue(f1, f2):
+    f1_ = f1.copy()
+    f2_ = f2.copy()
+    f2_[f2_.isna()] = 0
+    f1_[f1_.isna()] = 0
+    corrs = list()
+    for v in f1_.index:
+        cor_ = np.corrcoef(f1_[f1_.index == v].values, f2_[f2_.index == v].values)
+        cor_ = cor_[0, 1]
+        corrs.append(cor_)
+    return round(np.nanmean(corrs), 4)
+
+
+def CorrRet(ret1, ret2):
+    idx = ret1 != 0
+    ret1_ = ret1[idx]
+    ret2_ = ret2[idx]
+    cor_ = np.corrcoef(ret1_, ret2_)
+    cor_ = cor_[0, 1]
+    return round(cor_, 4)
