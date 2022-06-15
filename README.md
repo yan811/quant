@@ -4,7 +4,7 @@
 conda create --name quant python=3.7
 conda activate quant
 
-pip install jqdatasdk
+pip install mat73,gplearn,matplotlib
 
 
 2018.1.1-2022.6.1，全部A股

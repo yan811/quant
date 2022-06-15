@@ -9,18 +9,18 @@ import pandas as pd
 import numpy as np
 
 import mat73  # Comment: use " pip install mat73" in Annaconda Powershell to install mat73 
-import os
 
-#root = 'C:/Users/DELL/Desktop/recent/研一下/学习/量化/final_project/quant_code/'
-#os.chdir(root)
+import sys
+import os
+env_path = os.path.join(os.path.dirname(__file__), '..')#若在ipynb中，env_path = os.path.join(os.path.dirname(os.path.realpath('__file__')), '..')
+if env_path not in sys.path:
+    sys.path.append(env_path)\
 
 import utils.tools as tools # local module to deel with time format change
 import utils.calculators as calculators
 import factor_gen.factor101
 
-
-# In[6]:
-
+root= './'
 
 def get_day_rate():
     file = os.path.join(root,'raw_data','Px_new.mat')
@@ -62,8 +62,6 @@ def get_day_rate():
     return data
 
 
-# In[21]:
-
 
 #rate = get_dat_rate()
 def get_y(rate,percent):
@@ -80,11 +78,9 @@ def get_y(rate,percent):
     return rate
 
 
-# In[8]:
-
 
 if __name__=='__main__':
-    rate = get_day_rate()
-    y = get_y(rate,percent = 0.03)
+    rate = get_day_rate()#收益率
+    y = get_y(rate,percent = 0.03)#涨跌类别
     print(y.groupby('y').count())
 
