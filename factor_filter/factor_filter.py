@@ -5,18 +5,12 @@
 
 
 from utils.my_utils import read_csv, get_pivot_data
-
+from utils.calculators import pn_TransNorm, ts_Delay
+import numpy as np
+import matplotlib.pyplot as plt
 # In[2]:
 
 
-df = read_csv(dir_name='C:/Users/DELL/Desktop/recent/研一下/学习/量化/final_project/quant_code/raw_data/combine_data/',
-              file_name='factor101_financial')
-
-# In[3]:
-
-
-# https://www.joinquant.com/view/community/detail/b8ae4f443d688b7d479c07dffdf3fd56?type=1
-time_data = get_pivot_data(df, 'time')
 
 
 def get_ic_beta_t(all_data_dict, factor_name):
@@ -134,3 +128,13 @@ def CorrRet(ret1, ret2):
     cor_ = np.corrcoef(ret1_, ret2_)
     cor_ = cor_[0, 1]
     return round(cor_, 4)
+
+
+if __name__ == '__main__':
+    df = read_csv(dir_name='C:/Users/DELL/Desktop/recent/研一下/学习/量化/final_project/quant_code/raw_data/combine_data/',
+                  file_name='factor101_financial')
+
+    # In[3]:
+
+    # https://www.joinquant.com/view/community/detail/b8ae4f443d688b7d479c07dffdf3fd56?type=1
+    time_data = get_pivot_data(df, 'time')
