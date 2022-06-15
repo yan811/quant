@@ -4,7 +4,7 @@
 # In[1]:
 
 
-from my_utils import read_csv, get_pivot_data
+from utils.my_utils import read_csv, get_pivot_data
 
 # In[2]:
 
