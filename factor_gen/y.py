@@ -11,8 +11,8 @@ import numpy as np
 import mat73  # Comment: use " pip install mat73" in Annaconda Powershell to install mat73 
 import os
 
-root = 'C:/Users/DELL/Desktop/recent/研一下/学习/量化/final_project/quant_code/'
-os.chdir(root)
+#root = 'C:/Users/DELL/Desktop/recent/研一下/学习/量化/final_project/quant_code/'
+#os.chdir(root)
 
 import utils.tools as tools # local module to deel with time format change
 import utils.calculators as calculators

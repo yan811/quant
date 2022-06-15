@@ -7,8 +7,6 @@ import factor_gen.y as y
 
 
 def load_data_from_PX(path):
-    cut = 5000  # Because memory or CPU is not enough： cut the early year data
-
     data1 = mat73.loadmat(path)
 
     col = data1['LocalID']
@@ -64,7 +62,6 @@ def load_data_from_PX(path):
     VWAP.index = ind
     VWAP = VWAP.iloc[filter]
 
-
     # 清除新上市的股票
     listed = Volume.copy()
     listed[listed.isna()] = 0
@@ -87,13 +84,48 @@ def load_data_from_PX(path):
     return Open, High, Low, Close, Volume, Amount, TotalRet, VWAP, TradeDay
 
 
-def get_bollinger_band(Close, mean_day=20, std_index=2):
-    mean_line = calculators.ts_Mean(Close, mean_day)
-    std = calculators.st
+# 布林线
+def get_bollinger_band(Close, TradeDay, mean_day=20, std_index=2):
+    mean_line = calculators.ts_Mean(Close, mean_day, TradeDay)
+    std = calculators.ts_Stdev(Close, mean_day, TradeDay)
+    up_line = mean_line + std_index * std
+    down_line = mean_line - std_index * std
+    return mean_line, up_line, down_line
 
 
+def get_EMA(Close, num=1):
+    if num == 1:
+        return Close
+    last_EMA = get_EMA(Close, num - 1)
+    EMA = (num - 1) / (num + 1) * last_EMA.shift(1) + 2 / (num + 1) * Close
+    return EMA
+
+
+def get_MA(Close, TradeDay, num=200):
+    return calculators.ts_Mean(Close, num, TradeDay)
+
+
+def get_MACD(Close, TradeDay, ):
+    Close = calculators.OnlyTrading(Close, TradeDay)
+    EMA12 = get_EMA(Close, 12)
+    EMA26 = get_EMA(Close, 26)
+    DIF = EMA12 - EMA26
+    DIF_EMA9 = get_EMA(DIF, 9)
+    volume = 2 * (DIF - DIF_EMA9)
+    return volume, DIF, DIF_EMA9
+
+
+def get_Aroon(Close, TradeDay, num=20):
+    Close = calculators.OnlyTrading(Close, TradeDay)
+    max_index = Close.rolling(windows=num).argmax()
+    min_index = Close.rolling(windows=num).argmin()
+    index = np.linspace(0, len(Close.index)).repeat(len(Close.columns), axis=0).T
+    Aroon_up = (- (max_index - index)).round(num) / num
+    Aroon_down = (- (min_index - index)).round(num) / num
+    Aroon_osc = Aroon_up - Aroon_down
+    return Aroon_up, Aroon_down, Aroon_osc
 
 
 if __name__ == '__main__':
-    Open, High, Low, Close, Volume, Amount, TotalRet, VWAP, TradeDay\
+    Open, High, Low, Close, Volume, Amount, TotalRet, VWAP, TradeDay \
         = load_data_from_PX('./raw_data/Px_new.mat')

@@ -39,22 +39,21 @@ def pn_TransNorm(dfCleaned):  # normalization
 
 
 ## TS
-
-def ts_Delay(df, num):
+def ts_Delay(df, num, TradeDay):
     dfCleaned = OnlyTrading(df, TradeDay)
-    dfCleaned = dfCleaned.shift(num)  # shift, like:  df.shift(1), let yesterday's data to today
+    dfCleaned = dfCleaned.shift(num)  # shift, like:  df.shift(1), let yesterday's data to today 
     df = AllDate(df, dfCleaned, TradeDay)
     return df
 
 
-def ts_Mean(df, num):  # equal weight
+def ts_Mean(df, num, TradeDay):  # equal weight
     dfCleaned = OnlyTrading(df, TradeDay)
     dfCleaned2 = dfCleaned.rolling(window=num).mean()
     df = AllDate(df, dfCleaned2, TradeDay)
     return df
 
 
-def ts_Decay(df, num):  # decayed weight: linear change
+def ts_Decay(df, num, TradeDay):  # decayed weight: linear change
     dfCleaned = OnlyTrading(df, TradeDay)
     sums = 0
     for v in range(num):
@@ -70,7 +69,7 @@ def ts_Decay(df, num):  # decayed weight: linear change
     return df
 
 
-def ts_Decay2(dfCleaned, num):  # decayed weight: linear change
+def ts_Decay2(dfCleaned, num, TradeDay):  # decayed weight: linear change
     num = min(num, len(dfCleaned))
     # dfCleaned = OnlyTrading(df,TradeDay)
     sums = 0
@@ -94,7 +93,7 @@ def cf(j, n):
     return p3
 
 
-def ts_DecayExp(df, num):  # decayed weight: nonlinear change
+def ts_DecayExp(df, num, TradeDay):  # decayed weight: nonlinear change
     dfCleaned = OnlyTrading(df, TradeDay)
     series = [i for i in range(1, num * 2 + 1, 1)]
     out = list()
@@ -114,34 +113,35 @@ def ts_DecayExp(df, num):  # decayed weight: nonlinear change
     return df
 
 
-def ts_Max(df, num):  # get the max value of last num trading day
+def ts_Max(df, num, TradeDay):  # get the max value of last num trading day
     dfCleaned = OnlyTrading(df, TradeDay)
     dfCleaned2 = dfCleaned.rolling(window=num).max()
     df = AllDate(df, dfCleaned2, TradeDay)
     return df
 
 
-def ts_Min(df, num):  # get the min value of last num trading day
+def ts_Min(df, num, TradeDay):  # get the min value of last num trading day  
     dfCleaned = OnlyTrading(df, TradeDay)
     dfCleaned2 = dfCleaned.rolling(window=num).min()
     df = AllDate(df, dfCleaned2, TradeDay)
     return df
 
 
-def ts_Delta(dfCleaned, num):
+def ts_Delta(dfCleaned, num, TradeDay):
     dfCleaned2 = dfCleaned - ts_Delay(dfCleaned, num)
     return dfCleaned2
 
 
-def ts_Stdev(df, num):  # get the min value of last num trading day
+def ts_Stdev(df, num, TradeDay):  # get the min value of last num trading day  
     dfCleaned = OnlyTrading(df, TradeDay)
     dfCleaned2 = dfCleaned.rolling(num).std()
     df = AllDate(df, dfCleaned2, TradeDay)
     return df
 
 
-# more calculator , see df.rolling: http://www.cppcns.com/jiaoben/python/301821.html
-def ts_Rank(df, num):
+
+# more calculator , see df.rolling: http://www.cppcns.com/jiaoben/python/301821.html 
+def ts_Rank(df, num, TradeDay):
     dfCleaned = OnlyTrading(df, TradeDay)
     df = dfCleaned.rolling(num).rank()
     return df
