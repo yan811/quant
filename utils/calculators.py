@@ -197,3 +197,19 @@ def gp_abs(data):
 
 def gp_sig(data):
     return _sigmoid(data)
+
+
+def gp_relu(data):
+    return np.where(data > 0, data, 0)
+
+
+def gp_exp(data):
+    return np.exp(data)
+
+
+def gp_cos(data):
+    return np.cos(data)
+
+
+def gp_sin(data):
+    return np.sin(data)
