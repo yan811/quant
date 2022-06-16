@@ -8,7 +8,7 @@
 import math
 import scipy.stats as st
 import numpy as np
-
+from .tools import Repmat
 
 
 def OnlyTrading(df, TradeDay):  # turn data with all natural date to data with trade day only
@@ -30,34 +30,28 @@ def pn_TransNorm(dfCleaned):  # normalization
     # rank
     rank1 = dfCleaned.rank(axis=1)
     rank2 = rank1.count(1)
-    rank22 = tools.Repmat(rank1, rank2)
-    rank23 = tools.Repmat(rank1, 1 / 2 / rank2)
+    rank22 = Repmat(rank1, rank2)
+    rank23 = Repmat(rank1, 1 / 2 / rank2)
     rank4 = (rank1 - 1) / +  rank22
     rank5 = rank4 + rank23
     rank6 = rank5.copy()
     for v in rank6.columns:  #####
-        rank6[v] = st.norm.ppf(list(rank6[v]))  ##normalizing 
+        rank6[v] = st.norm.ppf(list(rank6[v]))  ##normalizing
     return rank6
 
 
 ## TS
-
-def ts_Delay(df, num, TradeDay):
-    dfCleaned = OnlyTrading(df, TradeDay)
-    dfCleaned = dfCleaned.shift(num)  # shift, like:  df.shift(1), let yesterday's data to today 
-    df = AllDate(df, dfCleaned, TradeDay)
-    return df
+def ts_Delay(dfCleaned, num):
+    dfCleaned = dfCleaned.shift(num)  # shift, like:  df.shift(1), let yesterday's data to today
+    return dfCleaned
 
 
-def ts_Mean(df, num, TradeDay):  # equal weight
-    dfCleaned = OnlyTrading(df, TradeDay)
+def ts_Mean(dfCleaned, num):  # equal weight
     dfCleaned2 = dfCleaned.rolling(window=num).mean()
-    df = AllDate(df, dfCleaned2, TradeDay)
-    return df
+    return dfCleaned2
 
 
-def ts_Decay(df, num, TradeDay):  # decayed weight: linear change
-    dfCleaned = OnlyTrading(df, TradeDay)
+def ts_Decay(dfCleaned, num):  # decayed weight: linear change
     sums = 0
     for v in range(num):
         # print(v)
@@ -68,13 +62,11 @@ def ts_Decay(df, num, TradeDay):  # decayed weight: linear change
             dfCleaned2 = dfCleaned2 + dfCleaned.shift(v) * (num - v) / num
         sums = sums + (num - v) / num
     dfCleaned2 = dfCleaned2 / sums
-    df = AllDate(df, dfCleaned2, TradeDay)
-    return df
+    return dfCleaned2
 
 
-def ts_Decay2(dfCleaned, num, TradeDay):  # decayed weight: linear change
+def ts_Decay2(dfCleaned, num):  # decayed weight: linear change
     num = min(num, len(dfCleaned))
-    # dfCleaned = OnlyTrading(df,TradeDay)
     sums = 0
     for v in range(num):
         # print(v)
@@ -85,7 +77,6 @@ def ts_Decay2(dfCleaned, num, TradeDay):  # decayed weight: linear change
             dfCleaned2 = dfCleaned2 + dfCleaned.shift(v) * (num - v) / num
         sums = sums + (num - v) / num
     dfCleaned2 = dfCleaned2 / sums
-    # df = AllDate(df,dfCleaned2,TradeDay)
     return dfCleaned2
 
 
@@ -96,8 +87,7 @@ def cf(j, n):
     return p3
 
 
-def ts_DecayExp(df, num, TradeDay):  # decayed weight: nonlinear change
-    dfCleaned = OnlyTrading(df, TradeDay)
+def ts_DecayExp(dfCleaned, num):  # decayed weight: nonlinear change
     series = [i for i in range(1, num * 2 + 1, 1)]
     out = list()
     n = len(series)
@@ -112,93 +102,114 @@ def ts_DecayExp(df, num, TradeDay):  # decayed weight: nonlinear change
         dfCleaned2 = dfCleaned2 + dfCleaned.shift(v) * out2[v]
         sums = sums + out2[v]
     dfCleaned2 = dfCleaned2 / sums
-    df = AllDate(df, dfCleaned2, TradeDay)
-    return df
+    return dfCleaned2
 
 
-def ts_Max(df, num, TradeDay):  # get the max value of last num trading day
-    dfCleaned = OnlyTrading(df, TradeDay)
+def ts_Max(dfCleaned, num):  # get the max value of last num trading day
     dfCleaned2 = dfCleaned.rolling(window=num).max()
-    df = AllDate(df, dfCleaned2, TradeDay)
-    return df
+    return dfCleaned2
 
 
-def ts_Min(df, num, TradeDay):  # get the min value of last num trading day  
-    dfCleaned = OnlyTrading(df, TradeDay)
+def ts_Min(dfCleaned, num):  # get the min value of last num trading day
     dfCleaned2 = dfCleaned.rolling(window=num).min()
-    df = AllDate(df, dfCleaned2, TradeDay)
-    return df
+    return dfCleaned2
 
 
-def ts_Delta(dfCleaned, num, TradeDay):
+def ts_Delta(dfCleaned, num):
     dfCleaned2 = dfCleaned - ts_Delay(dfCleaned, num)
     return dfCleaned2
 
 
-def ts_Stdev(df, num, TradeDay):  # get the min value of last num trading day  
-    dfCleaned = OnlyTrading(df, TradeDay)
+def ts_Stdev(dfCleaned, num):  # get the min value of last num trading day
     dfCleaned2 = dfCleaned.rolling(num).std()
-    df = AllDate(df, dfCleaned2, TradeDay)
+    return dfCleaned2
+
+
+# more calculator , see df.rolling: http://www.cppcns.com/jiaoben/python/301821.html 
+def ts_Rank(dfCleaned, num):
+    df = dfCleaned.rolling(num).rank()
     return df
 
 
+# rank=gplearn.functions.make_function(function = _rank,name = 'rank',arity = 1)
+
+
 def _protected_division(x1, x2):
-    with np.errstate(divide= 'ignore', invalid= 'ignore'):
-        return np.where(np.abs(x2) > 1e-10 ,np.divide(x1, x2), 1.)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        return np.where(np.abs(x2) > 1e-10, np.divide(x1, x2), 1.)
+
 
 def _protected_sqrt(x1):
     return np.sqrt(np.abs(x1))
 
+
 def _protected_log(x1):
-    with np.errstate(divide= 'ignore', invalid= 'ignore'):
+    with np.errstate(divide='ignore', invalid='ignore'):
         return np.where(np.abs(x1) > 1e-10, np.log(np.abs(x1)), 0.)
 
+
 def _protected_inverse(x1):
-    with np.errstate(divide= 'ignore', invalid= 'ignore'):
+    with np.errstate(divide='ignore', invalid='ignore'):
         return np.where(np.abs(x1) > 1e-10, 1. / x1, 0.)
 
-        
-        
+
 def _sigmoid(x1):
-    with np.errstate(over= 'ignore', under= 'ignore'):
-        return  1 / ( 1 + np.exp(-x1))
+    with np.errstate(over='ignore', under='ignore'):
+        return 1 / (1 + np.exp(-x1))
 
-def gp_add(x,y):
-    
-     return x + y
 
-def gp_sub(x,y):
-    
-     return x - y
+def gp_add(x, y):
+    return x + y
 
-def gp_mul(x,y):
-    
-     return x * y
 
-def gp_div(x,y):
-     return _protected_division(x, y)
+def gp_sub(x, y):
+    return x - y
+
+
+def gp_mul(x, y):
+    return x * y
+
+
+def gp_div(x, y):
+    return _protected_division(x, y)
+
 
 def gp_sqrt(data):
-    
-     return _protected_sqrt(data)
+    return _protected_sqrt(data)
+
 
 def gp_log(data):
-    
-     return _protected_log(data)
+    return _protected_log(data)
+
 
 def gp_neg(data):
-    
-     return np.negative(data)
+    return np.negative(data)
 
-def gp_inv(data):#倒数
-    
-     return _protected_inverse(data)
+
+def gp_inv(data):  # 倒数
+
+    return _protected_inverse(data)
+
 
 def gp_abs(data):
-    
-     return np.abs(data)
+    return np.abs(data)
+
 
 def gp_sig(data):
-    
-     return _sigmoid(data)
+    return _sigmoid(data)
 
+
+def gp_relu(data):
+    return np.where(data > 0, data, 0)
+
+
+def gp_exp(data):
+    return np.exp(data)
+
+
+def gp_cos(data):
+    return np.cos(data)
+
+
+def gp_sin(data):
+    return np.sin(data)
