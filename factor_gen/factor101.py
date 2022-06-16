@@ -4,7 +4,7 @@
 #import os
 import pandas as pd
 import numpy as np
-root= './'
+root= '../'
 #os.chdir(root)
 import sys
 import os

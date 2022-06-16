@@ -8,9 +8,74 @@ from utils.my_utils import read_csv, get_pivot_data
 from utils.calculators import pn_TransNorm, ts_Delay
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.stats as st
+
+
 # In[2]:
 
 
+def pn_TransNorm_per_col(x):
+    rank1 = x.rank(axis=0)
+    rank2 = rank1.count()
+    rank4 = (rank1 - 1) / rank2
+    rank5 = rank4 + 1 / 2 / rank2
+    return st.norm.ppf(rank5)
+
+
+def get_per_day_return(per_day_data, factor, ret='y'):
+    f = pn_TransNorm_per_col(per_day_data[factor])
+    ret_pd = f * per_day_data[ret]
+    ret_pd = ret_pd.mean()
+    return ret_pd
+
+
+def get_SharpRatio(total_data, date, factor, ret='y'):
+    """
+    Input:
+        total_data: 类型：dataframe
+                    格式：
+                        time, f1, f2 ...., rate, code (顺序和具体名称无所谓)
+                        2018-01-01,............,0.5, 000001
+                        2018-01-02,............,0.2, 000001
+                        .............
+                        2018-01-01,............,0.5, 511111
+                        2018-01-02,............,0.2, 511111
+                        .............
+                    预处理：（1）表中包含有时间列和return列
+                           （2）return需要预先进行延后处理，例如ts_Delay(2)
+                           （3）最好是只包含交易日的纯净数据
+        date: 类型: str, 指明时间列的名称
+        factor: 类型: str, 指明当前计算的因子列名称
+        ret: 类型: str, 指明对应return列名称
+    Output: SharpRatio, return_line(每日return)
+    """
+    return_line = total_data.groupby([str(date)]).apply(lambda x: get_per_day_return(x, str(factor), str(ret)))
+    sr = return_line.mean() / return_line.std() * 15
+    return round(sr, 3), return_line
+
+
+def get_factor_corr(total_data, code, f1, f2):
+    """
+        Input:
+            total_data: 类型：dataframe
+                        格式：
+                            time, f1, f2 ...., rate, code (顺序和具体名称无所谓)
+                            2018-01-01,............,0.5, 000001
+                            2018-01-02,............,0.2, 000001
+                            .............
+                            2018-01-01,............,0.5, 511111
+                            2018-01-02,............,0.2, 511111
+                            .............
+                        预处理：（1）表中包含有时间列和return列
+                               （2）return需要预先进行延后处理，例如ts_Delay(2)
+                               （3）最好是只包含交易日的纯净数据
+            code: 类型: str, 指明股票代码列的名称
+            f1: 类型: str,
+            f2: 类型: str,
+        Output: 相关系数
+        """
+    corr = total_data.groupby([str(code)]).apply(lambda x: CorrRet(x[str(f1)], x[str(f2)]))
+    return corr.mean()
 
 
 def get_ic_beta_t(all_data_dict, factor_name):
