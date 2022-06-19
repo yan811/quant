@@ -1,24 +1,7 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
-get_ipython().run_line_magic('pylab', '')
-get_ipython().run_line_magic('matplotlib', 'inline')
-pylab.rcParams['figure.figsize'] = (10, 6)
 import scipy.optimize
 from pandas import *
 import matplotlib
 from matplotlib import pyplot as plt
-
-
-# In[2]:
-
-
-# change browser to chrome to open jupyter notebook : https://www.jb51.net/article/186420.htm
-
-# import basic modules
 import pandas as pd
 import numpy as np
 
@@ -244,7 +227,6 @@ def get_weight(cols,trade_time):
     
     #get result
     df = pandas.DataFrame({'trade_date':trade_time,'sec_code':names,'weight': res1.W})
-    #df2 = df.iloc[np.where(df['Weight']!=0)]
     
     return df
 
